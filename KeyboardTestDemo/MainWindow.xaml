@@ -1,0 +1,33 @@
+﻿<Window x:Class="KeyboardTestDemo.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:KeyboardTestDemo"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800" Closed="MainWindow_OnClosed">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition Width="Auto"></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+        <Grid>
+           <Grid.RowDefinitions>
+               <RowDefinition></RowDefinition>
+               <RowDefinition></RowDefinition>
+           </Grid.RowDefinitions>
+            <TextBox Grid.Row="0" x:Name="TextBox1" Width="Auto" TextWrapping="Wrap" TextChanged="TextBox_OnTextChanged"></TextBox>
+            <TextBox Grid.Row="1" x:Name="TextBox2" Width="Auto" TextWrapping="Wrap" TextChanged="TextBox_OnTextChanged"></TextBox>
+        </Grid>
+        
+        <StackPanel Grid.Column="1">
+            <Button Click="Clear_Click" Width="70" Height="30" Content="清空"></Button>
+            <Button Click="SendMsg1_Click" Width="70" Height="30" Content="发送"></Button>
+            <Button Click="Connect_Click" Width="70" Height="30" Content="手动连接"></Button>
+            <StackPanel>
+                <Label x:Name="LabelX"></Label>
+                <Label x:Name="LabelY"></Label>
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</Window>
