@@ -94,24 +94,8 @@ namespace KeyboardTestDemo
                         {
                             //按键信息
                             Regex regex = new Regex("[^0]"); // 匹配除0以外的任何字符
-                            if (completeData.Contains("3A0301"))
-                            {
-                                var i = completeData.IndexOf("3A0301");
-                                var res = completeData.Substring(i + 10, 2);
-                                if (regex.IsMatch(res))
-                                {
-                                    TextBox1.AppendText($"{DateTime.Now}收到数据==>{res}\r\n");
-                                }
-                                else
-                                {
-                                    var newres = completeData.Substring(i + 6, 2);
-                                    if (regex.IsMatch(newres))
-                                    {
-                                        TextBox1.AppendText($"{DateTime.Now}收到数据==>{newres}\r\n");
-                                    }
-                                }
-                            }
 
+                            //先判断3A0302，因为win键3A0302 3A0301两个信息都有
                             if (completeData.Contains("3A0302"))
                             {
                                 var i = completeData.IndexOf("3A0302");
@@ -119,6 +103,26 @@ namespace KeyboardTestDemo
                                 var res = completeData.Substring(i + 6, 4);
                                 if (regex.IsMatch(res))
                                     TextBox1.AppendText($"{DateTime.Now}收到数据==>{res}\r\n");
+                            }
+                            else
+                            {
+                                if (completeData.Contains("3A0301"))
+                                {
+                                    var i = completeData.IndexOf("3A0301");
+                                    var res = completeData.Substring(i + 10, 2);
+                                    if (regex.IsMatch(res))
+                                    {
+                                        TextBox1.AppendText($"{DateTime.Now}收到数据==>{res}\r\n");
+                                    }
+                                    else
+                                    {
+                                        var newres = completeData.Substring(i + 6, 2);
+                                        if (regex.IsMatch(newres))
+                                        {
+                                            TextBox1.AppendText($"{DateTime.Now}收到数据==>{newres}\r\n");
+                                        }
+                                    }
+                                }
                             }
 
                             //TP信息
