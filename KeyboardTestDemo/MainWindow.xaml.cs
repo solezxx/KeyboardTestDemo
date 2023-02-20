@@ -1,20 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO.Ports;
-using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace KeyboardTestDemo
 {
@@ -56,7 +46,6 @@ namespace KeyboardTestDemo
                                     }
                                     catch (Exception e)
                                     {
-
                                     }
                                 }
                                 // 在这里可以进行串口数据的读取、写入等操作
@@ -66,7 +55,7 @@ namespace KeyboardTestDemo
                                 M3.Write(data, 0, data.Length); // 发送数据
                                 TextBox1.AppendText($"新键盘响应成功\r\n");
                             })));
-                           
+
                             break;
                         }
                     }
@@ -75,13 +64,15 @@ namespace KeyboardTestDemo
                 }
             }));
         }
-        string dataBuffer = "";
+
+        private string dataBuffer = "";
+
         private void M3_DataReceived(object sender, SerialDataReceivedEventArgs e)
         {
             try
             {
                 SerialPort sp = (SerialPort)sender;
-               
+
                 // 读取串口数据，将每个字节转换为16进制字符串
                 byte[] buffer = new byte[sp.BytesToRead];
                 sp.Read(buffer, 0, buffer.Length);
@@ -113,11 +104,11 @@ namespace KeyboardTestDemo
                                 }
                                 else
                                 {
-                                    var newres=completeData.Substring(i + 6, 2);
+                                    var newres = completeData.Substring(i + 6, 2);
                                     if (regex.IsMatch(newres))
                                     {
                                         TextBox1.AppendText($"{DateTime.Now}收到数据==>{newres}\r\n");
-                                    }   
+                                    }
                                 }
                             }
 
@@ -128,19 +119,18 @@ namespace KeyboardTestDemo
                                 var res = completeData.Substring(i + 6, 4);
                                 if (regex.IsMatch(res))
                                     TextBox1.AppendText($"{DateTime.Now}收到数据==>{res}\r\n");
-
                             }
 
                             //TP信息
                             if (completeData.Contains("3A040303"))
                             {
                                 int x = completeData.IndexOf("3A040303");
-                                var resx = completeData.Substring(x + 10, 2)+ completeData.Substring(x + 8, 2);
-                                var resy = completeData.Substring(x + 14, 2)+completeData.Substring(x + 12, 2);
-                                
-                                LabelX.Content =$"X:{Convert.ToInt32(resx, 16)}";
+                                var resx = completeData.Substring(x + 10, 2) + completeData.Substring(x + 8, 2);//高低位互换
+                                var resy = completeData.Substring(x + 14, 2) + completeData.Substring(x + 12, 2);//高低位互换
+
+                                LabelX.Content = $"X:{Convert.ToInt32(resx, 16)}";
                                 LabelY.Content = $"Y:{Convert.ToInt32(resy, 16)}";
-                                if (completeData.Substring(completeData.Length-10,2)=="01")
+                                if (completeData.Substring(completeData.Length - 10, 2) == "01")
                                 {
                                     TextBox1.AppendText($"TP按下，位置{LabelX.Content}{LabelY.Content}\r\n");
                                 }
@@ -148,7 +138,7 @@ namespace KeyboardTestDemo
 
                             TextBox2.AppendText(completeData.Replace("0A0D", "0A0D\r\n"));
                         }));
-                       
+
                         // 清空缓冲区
                         dataBuffer = "";
                     }
@@ -156,7 +146,6 @@ namespace KeyboardTestDemo
             }
             catch (Exception ex)
             {
-                
             }
         }
 
@@ -188,7 +177,7 @@ namespace KeyboardTestDemo
 
         private void Connect_Click(object sender, RoutedEventArgs e)
         {
-            if (M3==null)
+            if (M3 == null)
             {
                 M3 = new SerialPort("COM4", 460800, Parity.None, 8, StopBits.One);
                 if (!M3.IsOpen)
