@@ -23,6 +23,7 @@ namespace KeyboardTestDemo
         {
             await Task.Run((() =>
             {
+                Console.WriteLine(1111);
                 string[] oldPortNames = SerialPort.GetPortNames(); // 记录当前可用的串口
                 while (true)
                 {
