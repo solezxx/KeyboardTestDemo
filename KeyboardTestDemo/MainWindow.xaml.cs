@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections;
 using System.IO.Ports;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -51,9 +53,6 @@ namespace KeyboardTestDemo
                                 }
                                 // 在这里可以进行串口数据的读取、写入等操作
                                 M3.DataReceived += M3_DataReceived;
-                                TextBox1.AppendText($"串口{newPortName}打开成功\r\n");
-                                byte[] data = { 0x5A, 0x5A, 0x5A, 0x5A, 0x19, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x07, 0x03, 0x01, 0x00, 0x07, 0x01, 0x00, 0x09, 0x01, 0x00, 0x0F, 0x01, 0x00, 0x0C, 0x01, 0x00, 0xA4, 0xCF, 0x0A, 0x0D };
-                                M3.Write(data, 0, data.Length); // 发送数据
                                 TextBox1.AppendText($"新键盘响应成功\r\n");
                             })));
 
@@ -67,6 +66,7 @@ namespace KeyboardTestDemo
         }
 
         private string dataBuffer = "";
+        public int count=0;
 
         private void M3_DataReceived(object sender, SerialDataReceivedEventArgs e)
         {
@@ -140,6 +140,44 @@ namespace KeyboardTestDemo
                                     TextBox1.AppendText($"TP按下，位置{LabelX.Content}{LabelY.Content}\r\n");
                                 }
                             }
+                            //----------------------------------------------------------
+                            //链路建立响应消息
+                            if (completeData.Contains("3A0D010101"))
+                            {
+                                if (CheckBox.IsChecked == true)
+                                {
+                                    WriteToM3("5A 5A 5A 5A 0D 00 00 00 00 00 00 00 3A 0D 01 01 02 11 1C 0A 0D");
+                                }
+                                else if (CheckBox.IsChecked == false)
+                                {
+                                    WriteToM3("5A5A5A5A190000000000000001070301000701000901000F01000C0100A4CF0A0D");
+                                }
+                            }
+                            //查询加锁状态
+                            if (completeData.Contains("3A0101F5"))
+                            {
+                                count++;
+                                if (count == 3)
+                                {
+                                    //WriteToM3("5A5A5A5A0C0000000000000014050301A8690A0D");
+                                    WriteToM3("5A 5A 5A 5A 0C 00 00 00 00 00 00 00 14 01 01 01 0A D3 0A 0D");
+                                    count = 0;
+                                }
+                            }
+
+                            //解锁消息
+                            //if (completeData.Contains("14050301"))
+                            //{
+                            //    if (completeData.Contains("140503010000"))
+                            //    {
+                            //        WriteToM3("5A5A5A5A190000000000000001070301000701000901000F01000C0100A4CF0A0D");
+                            //    }
+                            //    else
+                            //    {
+                            //        //WriteToM3("5A5A5A5A0C0000000000000014050301A8690A0D");
+                            //        WriteToM3("5A 5A 5A 5A 0C 00 00 00 00 00 00 00 14 01 01 01 0A D3 0A 0D");
+                            //    }
+                            //}
 
                             TextBox2.AppendText(completeData.Replace("0A0D", "0A0D\r\n"));
                         }));
@@ -194,6 +232,54 @@ namespace KeyboardTestDemo
                 {
                     TextBox1.AppendText("COM4连接成功\r\n");
                 }));
+            }
+        }
+
+        private void Send_Click(object sender, RoutedEventArgs e)
+        {
+            if (M3 != null)
+            {
+                if (SendBox.Text != null)
+                {
+                    try
+                    {
+                        WriteToM3(SendBox.Text);
+                    }
+                    catch (Exception exception)
+                    {
+                        Console.WriteLine(exception);
+                        throw;
+                    }
+                }
+            }
+        }
+
+        public bool WriteToM3(string hex)
+        {
+            try
+            {
+                hex = hex.Replace(" ", "");
+                int NumberChars = hex.Length;
+                byte[] bytes = new byte[NumberChars / 2];
+                for (int i = 0; i < NumberChars; i += 2)
+                    bytes[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
+                if (M3 != null)
+                {
+                    M3.Write(bytes, 0, bytes.Length); // 发送数据
+                }
+                return true;
+            }
+            catch (Exception e)
+            {
+                return false;
+            }
+        }
+
+        private void DisConnect_Click(object sender, RoutedEventArgs e)
+        {
+            if (M3!=null)
+            {
+                M3.Close();
             }
         }
     }
