@@ -34,25 +34,25 @@ namespace KeyboardTestDemo
                     {
                         if (!Array.Exists(oldPortNames, oldPortName => oldPortName == newPortName))
                         {
-                            Dispatcher.BeginInvoke(new Action((() =>
+                            M3 = new SerialPort(newPortName, 460800, Parity.None, 8, StopBits.One);
+                            while (true)
                             {
-                                M3 = new SerialPort(newPortName, 460800, Parity.None, 8, StopBits.One);
-                                while (true)
+                                try
                                 {
-                                    try
+                                    if (!M3.IsOpen)
                                     {
-                                        if (!M3.IsOpen)
-                                        {
-                                            M3.Open();
-                                            break;
-                                        }
-                                    }
-                                    catch (Exception e)
-                                    {
+                                        M3.Open();
+                                        break;
                                     }
                                 }
-                                // 在这里可以进行串口数据的读取、写入等操作
-                                M3.DataReceived += M3_DataReceived;
+                                catch (Exception e)
+                                {
+                                }
+                            }
+                            // 在这里可以进行串口数据的读取、写入等操作
+                            M3.DataReceived += M3_DataReceived;
+                            Dispatcher.BeginInvoke(new Action((() =>
+                            {
                                 TextBox1.AppendText($"新键盘响应成功\r\n");
                             })));
 
@@ -163,7 +163,15 @@ namespace KeyboardTestDemo
                                 var indexsn = completeData.IndexOf("1405020400");
                                 SNKey = completeData.Substring(indexsn + 10, completeData.Length - indexsn - 18);
                                 SN = AscToString(SNKey);
-                                TextBox1.AppendText($"SN:{SN}");
+                                TextBox1.AppendText($"读取键盘SN:{SN}\r\n");
+                                if (SN == SendBox.Text)
+                                {
+                                    TextBox1.AppendText($"SN码一致\r\n");
+                                }
+                                else
+                                {
+                                    TextBox1.AppendText($"SN不一致\r\n");
+                                }
                                 WriteToM3("5A 5A 5A 5A 0C 00 00 00 18 00 00 00 14 05 03 01 C6 4A 0A 0D");
                             }
 
@@ -175,16 +183,33 @@ namespace KeyboardTestDemo
                                 if (completeData.Substring(l + 10, 2) == "00")//无锁
                                 {
                                     //解锁消息
-                                    WriteToM3("5A 5A 5A 5A 19 00 00 00 22 00 00 00 01 07 03 01 00 07 01 00 09 01 00 0F 01 00 0C 01 00 D2 79 0A 0D");
+                                    WriteToM3("5A 5A 5A 5A 0C 00 00 00 22 00 00 00 14 01 01 01 C4 27 0A 0D");
                                 }
                                 else
                                 {
-                                    String input = "1C0000002300000014050303"+SNKey;
-                                    var a = StringToHexBytes(input);
-                                    CRCXMODEM(a,a.Length);
-                                    string s = "5A 5A 5A 5A 1C 00 00 00 23 00 00 00 14 05 03 03" + SNKey  + "AF670A0D";
-                                    WriteToM3(s);
+                                    //String input = "1C0000002300000014050303"+SNKey;
+                                    //var a = StringToHexBytes(input);
+                                    //CRCXMODEM(a,a.Length);
+                                    //string s = "5A 5A 5A 5A 1C 00 00 00 23 00 00 00 14 05 03 03" + SNKey  + "AF670A0D";
+                                    //WriteToM3(s);
+                                    WriteToM3("5A 5A 5A 5A 19 00 00 00 24 00 00 00 01 07 03 01 00 07 01 00 09 01 00 0F 01 00 0C 01 00 A4 A5 0A 0D");
+                                    TextBox1.AppendText("键盘已加锁\r\n");
                                 }
+                            }
+
+                            if (completeData.Contains("1401010100"))
+                            {
+                                var v_index = completeData.IndexOf("1401010100");
+                                var version = AscToString(completeData.Substring(v_index + 10, 7));
+                                TextBox1.AppendText($"软件版本:{version}\r\n");
+                                WriteToM3("5A 5A 5A 5A 0C 00 00 00 25 00 00 00 14 01 01 02 BF D0 0A 0D");
+                            }
+                            if (completeData.Contains("1401010200"))
+                            {
+                                var v1_index = completeData.IndexOf("1401010200");
+                                var version1 = AscToString(completeData.Substring(v1_index + 10, 13));
+                                TextBox1.AppendText($"硬件版本:{version1}\r\n");
+                                WriteToM3("5A 5A 5A 5A 19 00 00 00 23 00 00 00 01 07 03 01 00 07 01 00 09 01 00 0F 01 00 0C 01 00 24 AC 0A 0D");
                             }
                             TextBox2.AppendText(completeData.Replace("0A0D", "0A0D\r\n"));
                         }));
@@ -267,14 +292,22 @@ namespace KeyboardTestDemo
             return bytes;
         }
 
+        private int sendcount = 0;
         public bool WriteToM3(string hex)
         {
             try
             {
-                var bytes = StringToHexBytes(hex);
+                hex = hex.Replace(" ", "");
+                sendcount++;
+                hex = hex.Substring(0, 16) + sendcount.ToString("X4").Replace("00","") + hex.Substring(18, hex.Length - 18);
+                //计算CRC
+                var bytes = StringToHexBytes(hex.Substring(8, hex.Length - 16));
+                var crc = CRCXMODEM(bytes, bytes.Length);
+                hex = hex.Substring(0, hex.Length - 8) + crc.ToString("X4").Substring(2,2)+ crc.ToString("X4").Substring(0, 2) + "0A0D";
+                var finalbytes = StringToHexBytes(hex);
                 if (M3 != null)
                 {
-                    M3.Write(bytes, 0, bytes.Length); // 发送数据
+                    M3.Write(finalbytes, 0, finalbytes.Length); // 发送数据
                 }
                 return true;
             }
@@ -308,6 +341,7 @@ namespace KeyboardTestDemo
             if (M3 != null)
             {
                 M3.Close();
+                TextBox1.AppendText($"断开连接\r\n");
             }
         }
 
@@ -349,6 +383,26 @@ namespace KeyboardTestDemo
             }
             while (!((ins & 0x10000) == 0x10000));
             return (UInt16)crc;
+        }
+
+        private void SN_Click(object sender, RoutedEventArgs e)
+        {
+            if (SN!=null)
+            {
+                if (SN==SendBox.Text)
+                {
+                    TextBox1.AppendText($"SN码一致\r\n");
+                }
+                else
+                {
+                    TextBox1.AppendText($"SN不一致\r\n");
+                }
+            }
+            else
+            {
+                TextBox1.AppendText($"读取的SN为空\r\n");
+            }
+            
         }
     }
 }
