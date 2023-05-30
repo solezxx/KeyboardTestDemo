@@ -153,6 +153,7 @@ namespace KeyboardTestDemo
                                 SN = SNKey="";
                                 if (count == 3)
                                 {
+                                    WriteToM3("5A 5A 5A 5A 0D 00 00 00 00 00 00 00 3A 0B 01 01 01 11 1C 0A 0D");
                                     WriteToM3("5A 5A 5A 5A 0C 00 00 00 17 00 00 00 14 05 02 04 90 F0 0A 0D ");
                                     count = 0;
                                 }
@@ -250,7 +251,8 @@ namespace KeyboardTestDemo
         {
             if (M3 == null)
             {
-                M3 = new SerialPort("COM4", 460800, Parity.None, 8, StopBits.One);
+                string[] newPortNames = SerialPort.GetPortNames(); // 获取当前可用的串口
+                M3 = new SerialPort(newPortNames.Last(), 460800, Parity.None, 8, StopBits.One);
                 if (!M3.IsOpen)
                 {
                     M3.Open();
@@ -258,7 +260,7 @@ namespace KeyboardTestDemo
                 M3.DataReceived += M3_DataReceived;
                 this.Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    TextBox1.AppendText("COM4连接成功\r\n");
+                    TextBox1.AppendText("连接成功\r\n");
                 }));
             }
         }
